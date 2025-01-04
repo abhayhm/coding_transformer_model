@@ -106,4 +106,13 @@ class MultiHeadAttentionBlock(nn.Model):
         x = x.transpose(1,2).contiguous().view(x.shape[0], -1, self.h * self.d_k)
 
         # (Batch, Seq_Len, d_model) --> (Batch, Seq_Len, d_model)
-        return slef.w_o(x)        
+        return self.w_o(x)
+
+class ResidualConnection(nn.Module):
+    def __init__(self, dropout: float) -> None:
+        super().__init__()
+        self.dropout = nn.Dropout(dropout)
+        self.norm = LayerNormalization()
+
+    def forward(self, x, sublayer):
+        return x + self.dropout(sublayer(self.orm(x)))
