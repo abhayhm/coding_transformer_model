@@ -4,7 +4,7 @@ import math
 
 class InputEmbeddings(nn.Module):
     def __init__(self, d_model: int, vocab_size: int) -> None:
-        super.__init__()
+        super().__init__()
         self.d_model = d_model
         self.vocab_size = vocab_size
         self.embedding = nn.Embedding(d_model, vocab_size)
@@ -14,7 +14,7 @@ class InputEmbeddings(nn.Module):
 
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model: int, seq_len: int, dropout: float) -> None:
-        super.__init__()
+        super().__init__()
         self.d_model = d_model
         self.seq_len = seq_len
         self.dropout = nn.Dropout(dropout)
@@ -23,10 +23,10 @@ class PositionalEncoding(nn.Module):
         pe = torch.zeros(seq_len, d_model)
 
         # Create a vector of shape (seq_len, 1)
-        position = torch.arrange(0, seq_len, dtype=torch.float).unsqueze(1)
-        div_term = torch.exp(torch.arrange(0, d_model, 2).float() * (-math.log(1000) / d_model))
+        position = torch.arange(0, seq_len, dtype=torch.float).unsqueze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(1000) / d_model))
 
-        # Apply Sin and Costo even and odd positions respectively
+        # Apply Sin and Cos to even and odd positions respectively
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0)
@@ -40,7 +40,7 @@ class PositionalEncoding(nn.Module):
     
 class LayerNormalization(nn.Module):
     def __init__(self, eps: float = 10 ** -6) -> None:
-        super.__init__()
+        super().__init__()
         self.eps = eps
         self.alpha = nn.parameter(torch.ones(1)) # Multipled
         self.bias =  nn.parameter(torch.zeros(1)) # Added
@@ -53,10 +53,22 @@ class LayerNormalization(nn.Module):
 
 class FeedForwardBlock(nn.Module):
     def __init__(self, d_model: int, d_ff: int, dropout: float) -> None:
-        super.__init__()
+        super().__init__()
         self.linear_1 = nn.Linear(d_model, d_ff)
         self.dropout = nn.Dropout(dropout)
         self.linear_2 = nn.Linear(d_ff, d_model)
 
     def forward(self, x):
         return self.linear_2(self.dropout(torch.relu(self.linear_1(x))))
+
+class LayerNormalization(nn.Module):
+    def __init__(self, eps: float = 10**-6) -> None:
+        super.__init__()
+        self.eps = eps
+        self.alpha = nn.Parameter(np.ones(1)) # Multiplied
+        self.bias = nn.Parameter(np.zeros(1)) # Added
+    
+    def forward(self, x):
+        mean = x.mean(dim = -1, kepdim=True)
+        std = x.std(dim = 1, keepdim=True)
+        return self.alpha * (x - mean) / (std + self.eps) + self.bias
