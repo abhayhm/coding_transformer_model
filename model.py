@@ -146,14 +146,14 @@ class DecodeBlock(nn.Module):
         self.self_attention_block = self_attention_block
         self.cross_attention_block = cross_attention_block
         self.feed_forward_block = feed_forward_block
-        self.resudial_connections = mm.ModuleList([ResidualConnection(dropout) for _ in range(3)])
+        self.resudial_connections = nn.ModuleList([ResidualConnection(dropout) for _ in range(3)])
 
     def forward(self, x, encoder_output, src_mask, tgt_mask):
         x = self.resudial_connections[0](x, lambda x: self.self_attention_block(x, x, x, tgt_mask))
         x = self.resudial_connections[1](x, lambda x: self.cross_attention_block(x, encoder_output, encoder_output, src_mask))
         x = self.resudial_connections[2](x, self.feed_forward_block)
 
-class DecoderBlock(nn.Module):
+class Decoder(nn.Module):
     def __init__(self, layers: nn.ModuleList) -> None:
         super().__init__()
         self.layers = layers
@@ -172,3 +172,30 @@ class ProjectionLayer(nn.Module):
     def forward(self, x):
         # (Batch, Seq_Len, d_model) --> (Batch, Seq_Len, Vocab_size)
         return torch.log_softmax(self.proj(x), dim = -1)
+    
+class Transformer(nn.Module):
+    def __init__(self, encoder: Encoder, decoder: Decoder, src_embed: InputEmbeddings, tgt_embed: InputEmbeddings, src_pos_embed: PositionalEncoding, tgt_pos_embed: PositionalEncoding, projection_layer: ProjectionLayer) -> None:
+        super().__init__()
+        self.encoder = encoder
+        self.decoder = decoder
+        self.src_embed = src_embed
+        self.tgt_embed = tgt_embed
+        self.src_pos_embed = src_pos_embed
+        self.tgt_pos_embed = tgt_pos_embed
+        self.projection_layer = projection_layer
+
+    def encode(self, src, src_mask):
+        # (batch, seq_len, d_model)
+        src = self.src_embed(src)
+        src = self.src_pos_embed(src)
+        return self.encoder(src, src_mask)
+    
+    def decode(self, encoder_output: torch.Tensor, src_mask: torch.Tensor, tgt: torch.Tensor, tgt_mask: torch.Tensor):
+        # (batch, seq_len, d_model)
+        tgt = self.tgt_embed(tgt)
+        tgt = self.tgt_pos_embed(tgt)
+        return self.decoder(tgt, encoder_output, src_mask, tgt_mask)
+    
+    def project(self, x):
+        # (batch, seq_len, vocab_size)
+        return self.projection_layer(x)
