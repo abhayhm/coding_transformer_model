@@ -7,7 +7,7 @@ class InputEmbeddings(nn.Module):
         super().__init__()
         self.d_model = d_model
         self.vocab_size = vocab_size
-        self.embedding = nn.Embedding(d_model, vocab_size)
+        self.embedding = nn.Embedding(vocab_size, d_model)
 
     def forward(self, x):
         return self.embedding(x) * math.sqrt(self.d_model)
@@ -61,7 +61,7 @@ class FeedForwardBlock(nn.Module):
     def forward(self, x):
         return self.linear_2(self.dropout(torch.relu(self.linear_1(x))))
 
-class MultiHeadAttentionBlock(nn.Model):
+class MultiHeadAttentionBlock(nn.Module):
     def __init__(self, d_model: int, h: int, dropout: float) -> None:
         super().__init__()
         self.d_model = d_model
